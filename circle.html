@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Калькулятор окружности по трем точкам</title>
+  <script src="swipe.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="calculator-container">
+    <h1>Калькулятор окружности по трем точкам</h1>
+    
+    <div class="card">
+      <div class="input-row">
+        <label>Точка A</label>
+        <input type="number" id="ax" placeholder="Точка X1">
+        <input type="number" id="ay" placeholder="Точка Y1">
+      </div>
+      <div class="input-row">
+        <label>Точка B</label>
+        <input type="number" id="bx" placeholder="Точка X2">
+        <input type="number" id="by" placeholder="Точка Y2">
+      </div>
+      <div class="input-row">
+        <label>Точка C</label>
+        <input type="number" id="cx" placeholder="Точка X3">
+        <input type="number" id="cy" placeholder="Точка Y3">
+      </div>
+      <button onclick="calculate()">Рассчитать</button>
+    </div>
+
+    <div class="card">
+      <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card result">
+      <div id="center">Центр: </div>
+      <div id="diameter">Диаметр: </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function calculateCircle(A, B, C) {
+      const [x1, y1] = A, [x2, y2] = B, [x3, y3] = C;
+
+      const D = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+      if (D === 0) throw new Error('Точки коллинеарны');
+
+      const Ux = ((x1 ** 2 + y1 ** 2) * (y2 - y3) + (x2 ** 2 + y2 ** 2) * (y3 - y1) + (x3 ** 2 + y3 ** 2) * (y1 - y2)) / D;
+      const Uy = ((x1 ** 2 + y1 ** 2) * (x3 - x2) + (x2 ** 2 + y2 ** 2) * (x1 - x3) + (x3 ** 2 + y3 ** 2) * (x2 - x1)) / D;
+
+      const radius = Math.sqrt((x1 - Ux) ** 2 + (y1 - Uy) ** 2);
+      return { center: [Ux, Uy], radius };
+    }
+
+    function drawCircle(center, radius, points) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Исправление 1: Правильный расчет границ
+      const allX = points.map(p => p[0]);
+      const allY = points.map(p => p[1]);
+      const padding = 20;
+
+      let minX = Math.min(...allX);
+      let maxX = Math.max(...allX);
+      let minY = Math.min(...allY);
+      let maxY = Math.max(...allY);
+
+      // Добавляем padding и защита от нулевого диапазона
+      minX = minX === maxX ? minX - padding : minX - padding;
+      maxX = minX === maxX ? maxX + padding : maxX + padding;
+      minY = minY === maxY ? minY - padding : minY - padding;
+      maxY = minY === maxY ? maxY + padding : maxY + padding;
+
+      const rangeX = maxX - minX;
+      const rangeY = maxY - minY;
+
+      // Исправление 2: Правильное масштабирование
+      const scaleX = canvas.width / rangeX;
+      const scaleY = canvas.height / rangeY;
+      const scale = Math.min(scaleX, scaleY);
+
+      // Функции преобразования координат
+      const toCanvasX = (x) => (x - minX) * scale;
+      const toCanvasY = (y) => canvas.height - (y - minY) * scale;
+
+      // Рисуем окружность
+      ctx.beginPath();
+      ctx.arc(
+        toCanvasX(center[0]),
+        toCanvasY(center[1]),
+        radius * scale,
+        0, 2 * Math.PI
+      );
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Рисуем точки
+      points.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(
+          toCanvasX(p[0]),
+          toCanvasY(p[1]),
+          4, 0, 2 * Math.PI
+        );
+        ctx.fillStyle = '#2c3e50';
+        ctx.fill();
+      });
+    }
+
+    function calculate() {
+      try {
+        const A = [parseFloat(ax.value), parseFloat(ay.value)];
+        const B = [parseFloat(bx.value), parseFloat(by.value)];
+        const C = [parseFloat(cx.value), parseFloat(cy.value)];
+
+        const { center, radius } = calculateCircle(A, B, C);
+
+        // Исправление 3: Правильное обновление холста
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        drawCircle(center, radius, [A, B, C]);
+
+        document.getElementById('center').textContent =
+          `Центр: (${center[0].toFixed(2)}, ${center[1].toFixed(2)})`;
+        document.getElementById('diameter').textContent =
+          `Диаметр: ${(2 * radius).toFixed(2)}`;
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    // Исправление 4: Автоматический перерасчет при изменении размеров
+    window.addEventListener('resize', () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      calculate(); // Перерисовываем при изменении размеров
+    });
+
+    // Инициализация
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  </script>
+</body>
+
+</html>

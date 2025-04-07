@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Расчёт угла по координатам</title>
+    <script src="swipe.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Расчёт угла по координатам</h1>
+        
+        <div class="card">
+            <div class="input-row">
+                <label>Точка A</label>
+                <input type="number" id="x1" placeholder="Точка X1">
+                <input type="number" id="y1" placeholder="Точка Y1">
+            </div>
+            <div class="input-row">
+                <label>Точка B</label>
+                <input type="number" id="x2" placeholder="Точка X2">
+                <input type="number" id="y2" placeholder="Точка Y2">
+            </div>
+            <button onclick="calculateAngle()">Рассчитать угол</button>
+        </div>
+
+        <div class="card">
+            <div class="result" id="result"></div>
+        </div>
+
+        <div class="card">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        // Инициализация canvas при загрузке
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        // Функция для отрисовки линии и точек с центрированием и масштабированием
+        function drawLineAndPoints(x1, y1, x2, y2) {
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Рассчитываем границы для центрирования
+            const allPoints = [{x: x1, y: y1}, {x: x2, y: y2}];
+            const padding = 0.1; // 10% отступ (оставим 80% для отрезка)
+            
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            
+            // Вычисляем масштаб для 80% области canvas
+            const scaleX = (canvas.width * 0.8) / (maxX - minX || 1);
+            const scaleY = (canvas.height * 0.8) / (maxY - minY || 1);
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Центрируем
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const offsetX = centerX - (minX + maxX) / 2 * scale;
+            const offsetY = centerY + (minY + maxY) / 2 * scale; // Y инвертирована
+
+            // Функция преобразования координат
+            const transform = (x, y) => ({
+                x: x * scale + offsetX,
+                y: -y * scale + offsetY
+            });
+
+            // Преобразуем координаты
+            const p1 = transform(x1, y1);
+            const p2 = transform(x2, y2);
+
+            // Рисуем линию
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = '#f00';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Рисуем точки
+            ctx.fillStyle = '#00f';
+            ctx.beginPath();
+            ctx.arc(p1.x, p1.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = '#0f0';
+            ctx.beginPath();
+            ctx.arc(p2.x, p2.y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Функция для расчёта угла
+        function calculateAngle() {
+            // Получаем значения координат
+            const x1 = parseFloat(document.getElementById('x1').value);
+            const y1 = parseFloat(document.getElementById('y1').value);
+            const x2 = parseFloat(document.getElementById('x2').value);
+            const y2 = parseFloat(document.getElementById('y2').value);
+
+            // Вычисляем разницу координат
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+
+            // Вычисляем угол в радианах и переводим в градусы
+            const angleRad = Math.atan2(dy, dx);
+            const angleDeg = (angleRad * 180 / Math.PI).toFixed(2);
+
+            // Выводим результат
+            document.getElementById('result').innerText = `Угол: ${angleDeg}°`;
+
+            // Отрисовываем график
+            drawLineAndPoints(x1, y1, x2, y2);
+        }
+
+        // Инициализация при загрузке страницы
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    </script>
+</body>
+</html>

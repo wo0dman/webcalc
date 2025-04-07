@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Расчет угла между отрезками</title>
+    <script src="swipe.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Расчет угла между отрезками</h1>
+        <div class="card">
+            <div class="input-row">
+                <input type="number" step="0.1" id="x1" placeholder="Точка X1">
+                <input type="number" step="0.1" id="y1" placeholder="Точка Y1">
+            </div>
+            <div class="input-row">
+                <input type="number" step="0.1" id="x2" placeholder="Точка X2">
+                <input type="number" step="0.1" id="y2" placeholder="Точка Y2">
+            </div>
+            <div class="input-row">
+                <input type="number" step="0.1" id="x3" placeholder="Точка X3">
+                <input type="number" step="0.1" id="y3" placeholder="Точка Y3">
+            </div>
+            <div class="input-row">
+                <input type="number" step="0.1" id="x4" placeholder="Точка X4">
+                <input type="number" step="0.1" id="y4" placeholder="Точка Y4">
+            </div>
+            <button onclick="calculate()">Рассчитать угол</button>
+        </div>
+
+        <div class="card">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+                <div class="result" id="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function calculate() {
+            // Получение координат точек
+            const p1 = {x: parseFloat(document.getElementById('x1').value), y: parseFloat(document.getElementById('y1').value)};
+            const p2 = {x: parseFloat(document.getElementById('x2').value), y: parseFloat(document.getElementById('y2').value)};
+            const p3 = {x: parseFloat(document.getElementById('x3').value), y: parseFloat(document.getElementById('y3').value)};
+            const p4 = {x: parseFloat(document.getElementById('x4').value), y: parseFloat(document.getElementById('y4').value)};
+
+            // Расчет векторов
+            const v1 = {x: p2.x - p1.x, y: p2.y - p1.y};
+            const v2 = {x: p4.x - p3.x, y: p4.y - p3.y};
+
+            // Расчет угла
+            const dot = v1.x * v2.x + v1.y * v2.y;
+            const mag1 = Math.sqrt(v1.x**2 + v1.y**2);
+            const mag2 = Math.sqrt(v2.x**2 + v2.y**2);
+            const angle = Math.acos(dot / (mag1 * mag2)) * (180 / Math.PI);
+
+            // Отрисовка
+            draw(p1, p2, p3, p4, angle);
+            document.getElementById('result').textContent = `Угол: ${angle.toFixed(2)}°`;
+        }
+
+        function draw(p1, p2, p3, p4, angle) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Определение границ и масштаба
+            const allPoints = [p1, p2, p3, p4];
+            const padding = 40;
+            
+            let minX = Math.min(...allPoints.map(p => p.x));
+            let maxX = Math.max(...allPoints.map(p => p.x));
+            let minY = Math.min(...allPoints.map(p => p.y));
+            let maxY = Math.max(...allPoints.map(p => p.y));
+            
+            const scaleX = (canvas.width - 2*padding) / (maxX - minX || 1);
+            const scaleY = (canvas.height - 2*padding) / (maxY - minY || 1);
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Функция преобразования координат
+            const transform = (x, y) => ({
+                x: padding + (x - minX) * scale,
+                y: canvas.height - padding - (y - minY) * scale
+            });
+
+            // Отрисовка осей
+            ctx.strokeStyle = '#ddd';
+            ctx.beginPath();
+            ctx.moveTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.stroke();
+
+            // Отрисовка отрезков
+            ctx.lineWidth = 2;
+            
+            // Первый отрезок
+            ctx.strokeStyle = '#007AFF';
+            ctx.beginPath();
+            let t = transform(p1.x, p1.y);
+            ctx.moveTo(t.x, t.y);
+            t = transform(p2.x, p2.y);
+            ctx.lineTo(t.x, t.y);
+            ctx.stroke();
+
+            // Второй отрезок
+            ctx.strokeStyle = '#FF3B30';
+            ctx.beginPath();
+            t = transform(p3.x, p3.y);
+            ctx.moveTo(t.x, t.y);
+            t = transform(p4.x, p4.y);
+            ctx.lineTo(t.x, t.y);
+            ctx.stroke();
+
+            // Отрисовка точек
+            allPoints.forEach((p, i) => {
+                t = transform(p.x, p.y);
+                ctx.fillStyle = i < 2 ? '#007AFF' : '#FF3B30';
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 4, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Подписи точек
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.fillText(`P${i+1}`, t.x + 8, t.y - 8);
+            });
+        }
+    </script>
+</body>
+</html>

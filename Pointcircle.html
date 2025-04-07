@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Окружность по трем точкам</title>
+    <script src="swipe.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>Окружность по трем точкам</h1>
+        
+        <div class="card">
+            <div class="input-row">
+                <label>Точка 1</label>
+                <input type="number" id="x1" placeholder="Точка X1">
+                <input type="number" id="y1" placeholder="Точка Y1">
+            </div>
+            <div class="input-row">
+                <label>Точка 2</label>
+                <input type="number" id="x2" placeholder="Точка X2">
+                <input type="number" id="y2" placeholder="Точка Y2">
+            </div>
+            <div class="input-row">
+                <label>Точка 3</label>
+                <input type="number" id="x3" placeholder="Точка X3">
+                <input type="number" id="y3" placeholder="Точка Y3">
+            </div>
+            <button onclick="calculateCircle()">Рассчитать</button>
+        </div>
+
+        <div class="card">
+            <div class="result">
+                <p id="center">Центр: —</p>
+                <p id="radius">Радиус: —</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="canvas-container">
+                <canvas id="canvas" width="400" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Смещение для центра canvas
+    const offsetX = canvas.width / 2;
+    const offsetY = canvas.height / 2;
+
+    // Функция для рисования точки (обновленная для работы с трансформированными координатами)
+    function drawPoint(x, y, color = 'red') {
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    // Функция для рисования окружности
+    function drawCircle(centerX, centerY, radius) {
+        ctx.beginPath();
+        ctx.arc(centerX + offsetX, offsetY - centerY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#4A89DC';
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    // Функция для очистки canvas
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Функция для расчёта окружности
+    function calculateCircle() {
+        const x1 = parseFloat(document.getElementById('x1').value);
+        const y1 = parseFloat(document.getElementById('y1').value);
+        const x2 = parseFloat(document.getElementById('x2').value);
+        const y2 = parseFloat(document.getElementById('y2').value);
+        const x3 = parseFloat(document.getElementById('x3').value);
+        const y3 = parseFloat(document.getElementById('y3').value);
+
+        const A = x2 - x1;
+        const B = y2 - y1;
+        const C = x3 - x1;
+        const D = y3 - y1;
+
+        const E = A * (x1 + x2) + B * (y1 + y2);
+        const F = C * (x1 + x3) + D * (y1 + y3);
+        const G = 2 * (A * (y3 - y1) - B * (x3 - x1));
+
+        if (G === 0) {
+            alert("Точки лежат на одной прямой, окружность не существует.");
+            return;
+        }
+
+        const centerX = (D * E - B * F) / G;
+        const centerY = (A * F - C * E) / G;
+        const radius = Math.sqrt(Math.pow(x1 - centerX, 2) + Math.pow(y1 - centerY, 2));
+
+        document.getElementById('center').innerText = `Центр окружности X,Y: (${centerX.toFixed(2)}, ${centerY.toFixed(2)})`;
+        document.getElementById('radius').innerText = `Радиус окружности: ${radius.toFixed(2)}`;
+
+        // Рассчет границ для центрирования
+        const allPoints = [
+            {x: x1, y: y1},
+            {x: x2, y: y2}, 
+            {x: x3, y: y3},
+            {x: centerX, y: centerY}
+        ];
+        
+        const padding = 20;
+        const minX = Math.min(...allPoints.map(p => p.x)) - radius - padding;
+        const maxX = Math.max(...allPoints.map(p => p.x)) + radius + padding;
+        const minY = Math.min(...allPoints.map(p => p.y)) - radius - padding;
+        const maxY = Math.max(...allPoints.map(p => p.y)) + radius + padding;
+        
+        const scaleX = canvas.width / (maxX - minX);
+        const scaleY = canvas.height / (maxY - minY);
+        const scale = Math.min(scaleX, scaleY) * 0.9; // 10% отступ
+        
+        // Функция преобразования координат
+        const transform = (x, y) => ({
+            x: (x - minX) * scale,
+            y: canvas.height - (y - minY) * scale // инвертируем Y
+        });
+
+        clearCanvas();
+        
+        // Отрисовка окружности с центрированием
+        const tCenter = transform(centerX, centerY);
+        ctx.beginPath();
+        ctx.arc(tCenter.x, tCenter.y, radius * scale, 0, Math.PI * 2);
+        ctx.strokeStyle = '#4A89DC';
+        ctx.stroke();
+        ctx.closePath();
+
+        // Отрисовка точек
+        drawPoint(transform(x1, y1).x, transform(x1, y1).y, '#e74c3c');
+        drawPoint(transform(x2, y2).x, transform(x2, y2).y, '#2ecc71');
+        drawPoint(transform(x3, y3).x, transform(x3, y3).y, '#3498db');
+        drawPoint(tCenter.x, tCenter.y, '#9b59b6');
+    }
+
+    // Инициализация
+    clearCanvas();
+    </script>
+</body>
+</html>
